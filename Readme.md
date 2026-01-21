@@ -1,47 +1,67 @@
 ## INSTALLATION
 
-## Deactivate
-deactivate
+---
 
-###### WINDOWS
+## Option 1: Installation using Docker
 
-## Create virtual envirenment
-python -m venv venv
+### Prerequisites
 
-## Activate virtual environment
-.\venv\Scripts\Activate.ps1
+* Docker
+* `.env` file (if required)
 
-## Install / update dependencies
-pip install -r requirements.txt
+### Build Docker image
 
-## Run the project
-uvicorn app.main:app --reload
+sudo docker build -t rag_multimodel:latest .
 
-###### MAC
+### Remove existing container (if any)
 
-## Create virtual envirenment
-python3 -m venv venv
+sudo docker rm -f rag_multimodel
 
-## Activate virtual environment 
-source venv/bin/activate
+### Run Docker container
 
-## Install / update dependencies
-pip install -r requirements.txt
+sudo docker run -d 
+-p 3001:3000 
+-v $(pwd)/chroma_db:/app/chroma_db 
+--env-file .env 
+--name rag_multimodel 
+rag_multimodel:latest
 
-## Run the project
-uvicorn app.main:app --reload
-
-
-sudo docker rm rag_multimodel
-
-//sudo docker run -d -p 3000:3000  -v $(pwd)/chroma_db:/app/chroma_db  --name rag_multimodel  rag_multimodel:latest
-sudo docker run -d -p 3001:3000 -v $(pwd)/chroma_db:/app/chroma_db --name rag_multimodel rag_multimodel:latest
-
-sudo docker stop rag_multimodel
-
-
-sudo docker run -d -p 3001:3000 -v $(pwd)/chroma_db:/app/chroma_db --env-file .env --name rag_multimodel rag_multimodel:latest
+### Check running containers
 
 sudo docker ps
 
+### View logs
+
 sudo docker logs rag_multimodel
+
+### Stop container
+
+sudo docker stop rag_multimodel
+
+### Application URL
+
+[http://localhost:3001](http://localhost:3001)
+
+---
+
+## Option 2: Installation using Local Environment (Direct Run)
+
+### Create virtual environment
+
+python -m venv venv
+
+### Activate virtual environment (Windows)
+
+.\venv\Scripts\Activate.ps1
+
+### Activate virtual environment (Mac / Linux)
+
+source venv/bin/activate
+
+### Install / update dependencies
+
+pip install -r requirements.txt
+
+### Run the project
+
+uvicorn app.main:app --reload
