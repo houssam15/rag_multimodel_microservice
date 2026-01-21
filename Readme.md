@@ -1,3 +1,28 @@
+## About
+
+**RAG Multimodel App** is a backend application that implements a **Retrieval-Augmented Generation (RAG)** pipeline for multiple file formats.
+It allows ingesting documents, converting them into vector embeddings, storing them in a vector database, and performing fast semantic search powered by Large Language Models (LLMs).
+
+### Key Features
+
+* Supports multiple document formats (PDF, TXT, DOCX, etc.)
+* RAG (Retrieval-Augmented Generation) workflow
+* Vector database storage for efficient similarity search
+* Fast and scalable semantic search
+* LLM-powered question answering over indexed documents
+* Docker-ready for easy deployment
+* Can run locally using a Python virtual environment
+
+### Use Cases
+
+* Document-based Q&A systems
+* Knowledge base search
+* AI assistants over private documents
+* Enterprise search and retrieval systems
+
+The project is designed to be modular, extensible, and production-ready, making it suitable for experimentation as well as real-world applications.
+
+
 ## INSTALLATION
 
 ---
