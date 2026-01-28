@@ -6,7 +6,6 @@ from fastapi import FastAPI, UploadFile, Depends, HTTPException, File, Form
 import tempfile
 from app.schemas import QueryRequest, QueryResponse
 from app.rag.vector import vectordb
-from app.rag.pdf import extract_text_from_pdf
 from app.rag.images import extract_images_from_pdf, describe_image
 from app.schemas import QueryRequest, QueryResponse
 from app.rag.llm import llm
@@ -72,11 +71,11 @@ async def ingest(
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
             tmp.write(file_bytes)
             pdf_path = tmp.name
-        result = ingester.ingest_pdf(pdf_path)
+        result = await ingester.ingest_pdf(pdf_path)
     
     elif file_type == "image":
         image = Image.open(io.BytesIO(file_bytes))
-        result = ingester.ingest_image(image)
+        result = await ingester.ingest_image(image)
     
     elif file_type == "text":
         try:

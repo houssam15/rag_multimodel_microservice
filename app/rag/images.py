@@ -2,8 +2,9 @@ import fitz
 import base64
 from PIL import Image
 from langchain_core.messages import HumanMessage
-from .llm import llm
+from .llm import llm,safe_llm_call
 import io
+import asyncio
 
 def extract_images_from_pdf(pdf_path):
     images = []
@@ -32,7 +33,7 @@ def image_to_base64(image: Image.Image):
     image.save(buf, format="PNG")
     return base64.b64encode(buf.getvalue()).decode()
 
-def describe_image(image: Image.Image):
+async def describe_image(image: Image.Image):
     img_b64 = image_to_base64(image)
 
     message = HumanMessage(
@@ -47,5 +48,7 @@ def describe_image(image: Image.Image):
         ]
     )
 
-    response = llm.invoke([message])
+    #response = llm.invoke([message])
+    response = await safe_llm_call([message])
+    await asyncio.sleep(0.3)
     return response.content

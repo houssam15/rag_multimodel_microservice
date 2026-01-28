@@ -1,8 +1,8 @@
 from typing import List, Dict, Any
 from app.rag.vector import vectordb
-from app.rag.pdf import extract_text_from_pdf
 from app.rag.images import extract_images_from_pdf, describe_image
 from app.rag.llm import llm
+import fitz
 
 class DocumentIngester:
     """Unified ingester with metadata support for various document types."""
@@ -27,10 +27,10 @@ class DocumentIngester:
         """Single point of entry to vector DB"""
         vectordb.add_texts(texts, metadatas=metadatas)
 
-    def ingest_pdf(self, pdf_path: str):
+    async def ingest_pdf(self, pdf_path: str):
         """Handle PDF text and images in one method"""
         # Extract and ingest text
-        text = extract_text_from_pdf(pdf_path)
+        text = self._extract_text_from_pdf(pdf_path)
         chunks = self._chunk_text(text)  # Optional: chunk text
         
         text_metadatas = [
@@ -45,7 +45,7 @@ class DocumentIngester:
         image_metadatas = []
         
         for i, img in enumerate(images):
-            caption = describe_image(img)
+            caption = await describe_image(img)
             captions.append(caption)
             image_metadatas.append(
                 self._build_metadata(
@@ -84,9 +84,9 @@ class DocumentIngester:
         }
     
     # -------- IMAGE INGESTION --------
-    def ingest_image(self, image, filename: str = None):
+    async def ingest_image(self, image, filename: str = None):
         """Handle single image files"""
-        caption = describe_image(image)
+        caption = await describe_image(image)
         metadata = self._build_metadata(
             "image",
             chunk_type="image",
@@ -140,4 +140,7 @@ class DocumentIngester:
         
         return chunks if chunks else [content]
 
+    def _extract_text_from_pdf(self,pdf_path: str) -> str:
+        doc = fitz.open(pdf_path)
+        return " ".join(page.get_text() for page in doc)
             
