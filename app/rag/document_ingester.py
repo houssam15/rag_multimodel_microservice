@@ -170,6 +170,9 @@ class DocumentIngester:
                 "height": block.get("height")
             })
             current_page = block["page"]
+            print("===================")
+            print(current_page)
+            print(current_rects)
         
 
     def _extract_text_from_pdf(self,pdf_path: str) -> str:
@@ -180,6 +183,8 @@ class DocumentIngester:
         doc = fitz.open(pdf_path)
         blocks = []
         for page_index, page in enumerate(doc):
+            page_width = page.rect.width
+            page_height = page.rect.height
             for block in page.get_text("dict")["blocks"]:
                 if "lines" not in block:
                     continue
@@ -187,11 +192,12 @@ class DocumentIngester:
                 for line in block["lines"]:
                     for span in line["spans"]:
                         text += span["text"] + " "
-                print(block)
                 blocks.append({
                     "text": text.strip(),
                     "bbox": block["bbox"],
-                    "page": page_index + 1
+                    "page": page_index + 1,
+                    "width": page_width,
+                    "height": page_height 
                 })
         return blocks
         
