@@ -3,6 +3,7 @@ from app.rag.vector import vectordb
 from app.rag.images import extract_images_from_pdf, describe_image
 from app.rag.llm import llm
 import fitz
+import json
 
 class DocumentIngester:
     """Unified ingester with metadata support for various document types."""
@@ -31,22 +32,25 @@ class DocumentIngester:
         """Handle PDF text and images in one method"""
         #implement chunking blocks 
         blocks = self._extract_blocks_from_pdf(pdf_path)
-        self._chunk_blocks(blocks)
-        return
+        chunks = self._chunk_blocks(blocks)
         # Extract and ingest text
         # text = self._extract_text_from_pdf(pdf_path)
-        chunks = self._chunk_text(text)  # Optional: chunk text
+        #chunks = self._chunk_text(text)  # Optional: chunk text
+        texts = [chunk["text"] for chunk in chunks]
         text_metadatas = [
-            self._build_metadata("pdf", chunk_type="text", chunk_index=i)
-            for i in range(len(chunks))
-        ]
-        self._add_to_vectordb(chunks, text_metadatas)
-        
+            self._build_metadata(
+                "pdf", 
+                chunk_type="text",
+                chunk_index=i,
+                chunk_position=json.dumps(chunk["position"])
+            )
+            for i, chunk in enumerate(chunks)
+        ] 
+        self._add_to_vectordb(texts, text_metadatas)
         # Extract and ingest images
         images = extract_images_from_pdf(pdf_path)
         captions = []
         image_metadatas = []
-        
         for i, img in enumerate(images):
             caption = await describe_image(img)
             captions.append(caption)
@@ -143,37 +147,56 @@ class DocumentIngester:
         
         return chunks if chunks else [content]
 
+    def _make_bounding_rect(self, rects, width, height):
+        return {
+            "x1": min(r["x1"] for r in rects),
+            "y1": min(r["y1"] for r in rects),
+            "x2": max(r["x2"] for r in rects),
+            "y2": max(r["y2"] for r in rects),
+            "width": width,
+            "height": height
+        }
+    
     def _chunk_blocks(self,blocks:List[Dict],chunk_size:int = 1000):
         chunks = []
         current_text = ""
         current_rects = []  
         current_page = None 
+        current_width = 0
+        current_height = 0  
+        def flush_chunk():
+            chunks.append({
+                "text": current_text.strip(),
+                "position": {
+                    "boundingRect": self._make_bounding_rect(
+                        current_rects, current_width, current_height
+                    ),
+                    "rects": current_rects,
+                    "pageNumber": current_page
+                }
+            })
         for block in blocks:
             block_text = block["text"]
             if len(current_text) + len(block_text) >= chunk_size:
-                chunks.append({
-                    "text": current_text.strip(),
-                    "position": {
-                        "rects" : current_rects,
-                        "pageNumber": current_page
-                    }
-                })
+                flush_chunk()
                 current_text= ""
-                current_rects = []
+                current_rects = []   
             current_text += block_text + " "
             current_rects.append({
                 "x1": block["bbox"][0],
                 "y1": block["bbox"][1],
                 "x2": block["bbox"][2],
                 "y2": block["bbox"][3],
-                "width": block.get("width"),
-                "height": block.get("height")
+                "width": block["width"],
+                "height": block["height"]
             })
             current_page = block["page"]
-            print("===================")
-            print(current_page)
-            print(current_rects)
-        
+            current_width = block["width"]
+            current_height = block["height"]
+        if current_text:
+            flush_chunk()
+        return chunks
+
 
     def _extract_text_from_pdf(self,pdf_path: str) -> str:
         doc = fitz.open(pdf_path)

@@ -4,7 +4,7 @@ from PIL import Image
 import pandas as pd
 from fastapi import FastAPI, UploadFile, Depends, HTTPException, File, Form
 import tempfile
-from app.schemas import QueryRequest, QueryResponse
+from app.schemas import QueryRequest, QueryResponse,ChunkContext
 from app.rag.vector import vectordb
 from app.rag.images import extract_images_from_pdf, describe_image
 from app.schemas import QueryRequest, QueryResponse
@@ -16,6 +16,7 @@ from app.utils.doc_extractors import (
     extract_text_from_docx,
     extract_text_from_pptx,
 )
+import json
 
 app = FastAPI(title="RAG Microservice")
 
@@ -40,7 +41,19 @@ async def query_rag(
     """
 
     response = llm.invoke(prompt)
-    return QueryResponse(answer=response.content)
+
+    return QueryResponse(
+        answer=response.content,
+        context=[
+            ChunkContext(
+                text=doc.page_content,
+                position=json.loads(doc.metadata["chunk_position"])
+                if "chunk_position" in doc.metadata
+                else {}
+            )
+            for doc in docs
+        ]
+    )
 
 @app.post("/ingest")
 async def ingest(
