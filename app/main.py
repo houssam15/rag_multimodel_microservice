@@ -47,6 +47,7 @@ async def query_rag(
         context=[
             ChunkContext(
                 text=doc.page_content,
+                file_id= doc.metadata.get("file_id", "unknown"),
                 position=json.loads(doc.metadata["chunk_position"])
                 if "chunk_position" in doc.metadata
                 else {}
@@ -59,6 +60,7 @@ async def query_rag(
 async def ingest(
         file: UploadFile,
         user_id: str = Form(...),
+        file_id: str = Form(...),
         _: None = Depends(verify_api_key)
     ):
     """Main ingestion endpoint with user context"""
@@ -77,7 +79,8 @@ async def ingest(
     ingester = DocumentIngester(
         user_id=user_id,
         document_id=document_id,
-        filename=file.filename
+        filename=file.filename,
+        file_id = file_id
     )
     # Handle each file type
     if file_type == "pdf":
@@ -85,7 +88,7 @@ async def ingest(
             tmp.write(file_bytes)
             pdf_path = tmp.name
         result = await ingester.ingest_pdf(pdf_path)
-    
+
     elif file_type == "image":
         image = Image.open(io.BytesIO(file_bytes))
         result = await ingester.ingest_image(image)

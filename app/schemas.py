@@ -8,6 +8,7 @@ class QueryRequest(BaseModel):
 
 class ChunkContext(BaseModel):
     text: str
+    file_id: str
     position: Dict[str, Any]
 
 class QueryResponse(BaseModel):

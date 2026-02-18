@@ -7,10 +7,11 @@ import json
 
 class DocumentIngester:
     """Unified ingester with metadata support for various document types."""
-    def __init__(self,user_id: str,document_id: str,filename: str):
+    def __init__(self,user_id: str,document_id: str,filename: str,file_id:str):
         self.user_id = user_id
         self.document_id = document_id
         self.filename = filename
+        self.file_id = file_id
 
     def _build_metadata(self, file_type:str, **kwargs) -> Dict[str,Any]:
         """Build base metadata with user context"""
@@ -42,7 +43,8 @@ class DocumentIngester:
                 "pdf", 
                 chunk_type="text",
                 chunk_index=i,
-                chunk_position=json.dumps(chunk["position"])
+                chunk_position=json.dumps(chunk["position"]),
+                file_id=self.file_id 
             )
             for i, chunk in enumerate(chunks)
         ] 
@@ -58,7 +60,8 @@ class DocumentIngester:
                 self._build_metadata(
                     "pdf",
                     chunk_type="image",
-                    page_number=i + 1
+                    page_number=i + 1,
+                    file_id=self.file_id 
                 )
             )
         
